@@ -22,7 +22,8 @@ export interface Handling {
   /** Interval between repeats, ms. 0 = instant. */
   arr: number;
   /** Soft drop speed as a multiple of gravity. 0 = instant. */
-  sdf: number;
+  /** Soft drop speed in rows per second, the same at every level; 0 = instant. */
+  softRate: number;
 }
 
 export interface GameOptions {
@@ -201,6 +202,11 @@ export class Game {
         break;
       }
       case 'soft':
+        // A tap always moves exactly one row; holding repeats at a steady rate.
+        if (!this.held.soft && this.active && this.handling.softRate > 0) {
+          this.gravity = 0;
+          if (this.stepDown()) this.score += 1;
+        }
         this.held.soft = true;
         break;
       case 'hard':
@@ -291,10 +297,14 @@ export class Game {
     }
 
     if (this.free && !this.held.soft) return;
-    if (this.held.soft && this.handling.sdf <= 0) {
+    const fall = msPerRow(this.level);
+    if (this.held.soft && this.handling.softRate <= 0) {
       this.gravity = H;
+    } else if (this.held.soft) {
+      // Fixed speed regardless of level, but never slower than gravity itself.
+      this.gravity += dt / Math.min(fall, 1000 / this.handling.softRate);
     } else {
-      this.gravity += (dt / msPerRow(this.level)) * (this.held.soft ? this.handling.sdf : 1);
+      this.gravity += dt / fall;
     }
     while (this.gravity >= 1 && this.stepDown()) {
       this.gravity -= 1;
@@ -529,6 +539,7 @@ export class Game {
     this.score += gain * this.level;
     this.lines += n;
     this.pieces++;
+    if (gain) text.push('+' + gain * this.level);
     if (text.length) {
       this.popup = text;
       this.popupMs = 1600;

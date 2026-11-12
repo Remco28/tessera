@@ -9,8 +9,10 @@ import type { Tutorial, Target } from '../game/tutorial.ts';
 
 const C = {
   bg: rgb(0x15171c),
-  well: rgb(0x0c0e12),
-  slot: rgb(0x181b22),
+  well: rgb(0x20242e),   // grid lines between cells
+  slot: rgb(0x0b0c10),   // empty cell, darker than the window background
+  edge: rgb(0x8f98a8),   // frame around the play area
+  head: rgb(0x8468b0),   // menu group headings
   panel: rgb(0x1b1e26),
   text: rgb(0xe8e6e1),
   dim: rgb(0x7a828e),
@@ -61,7 +63,8 @@ function outline(s: Surface, x: number, y: number, size: number, c: number): voi
 }
 
 function board(s: Surface, game: Game, bx: number, by: number, cell: number, ghost: boolean, target: Target | null): void {
-  s.rect(bx - 2, by - 2, W * cell + 3, VISIBLE * cell + 3, C.faint);
+  const e = Math.max(2, Math.round(cell / 10));
+  s.rect(bx - 1 - e, by - 1 - e, W * cell + 1 + 2 * e, VISIBLE * cell + 1 + 2 * e, C.edge);
   s.rect(bx - 1, by - 1, W * cell + 1, VISIBLE * cell + 1, C.well);
   const g = cell >= 10 ? 1 : 0;
   for (let y = 0; y < VISIBLE; y++) {
@@ -134,7 +137,7 @@ function popup(s: Surface, game: Game, cx: number, y: number, width: number, fs:
   if (game.popupMs <= 0) return;
   fs = fit(game.popup, width, fs);
   game.popup.forEach((line, i) => {
-    s.text(line, cx, y + i * (CHAR_H + 3) * fs, fs, i === 0 ? C.accent : C.text, 0);
+    s.text(line, cx, y + i * (CHAR_H + 3) * fs, fs, i === 0 || line[0] === '+' ? C.accent : C.text, 0);
   });
 }
 
@@ -184,7 +187,7 @@ export function drawGame(s: Surface, v: GameView): void {
   } else if (game.mode === 'ultra') {
     stats.push(['TIME LEFT', formatTime(ULTRA_MS - game.timeMs)], ['SCORE', String(game.score)], ['LINES', String(game.lines)]);
   } else if (game.mode === 'practice') {
-    stats.push(['T-SPINS', String(game.spins)], ['LINES', String(game.lines)], ['PIECES', String(game.pieces)]);
+    stats.push(['SCORE', String(game.score)], ['T-SPINS', String(game.spins)], ['LINES', String(game.lines)], ['PIECES', String(game.pieces)]);
   } else {
     stats.push(['TIME', time], ['RUBBLE', String(game.rubble)], ['LINES', String(game.lines)]);
   }
@@ -305,6 +308,8 @@ export interface MenuItem {
   adjust?: boolean;
   /** Start a new group: draws a divider above this item. */
   sep?: boolean;
+  /** Heading shown above this item, naming the group it starts. */
+  head?: string;
 }
 
 export interface MenuView {
@@ -323,8 +328,9 @@ export interface MenuView {
   hints?: [string, string][];
 }
 
-const ROW_U = 15;   // list row height, in text-scale units
+const ROW_U = 14;   // list row height, in text-scale units
 const SEP_U = 7;    // extra height for a group divider
+const HEAD_U = 10;  // extra height for a group heading
 const PAD_U = 6;    // card padding
 const CHIP_U = CHAR_H + 4;
 
@@ -383,7 +389,8 @@ export function drawMenu(s: Surface, m: MenuView): void {
   for (const line of info) chars = Math.max(chars, line.length);
   const seps = m.items.filter((it, i) => it.sep && i > 0).length;
   const infoU = info.length ? info.length * (CHAR_H + 4) + SEP_U : 0;
-  const cardU = PAD_U * 2 + infoU + m.items.length * ROW_U + seps * SEP_U;
+  const heads = m.items.filter((it) => it.head).length;
+  const cardU = PAD_U * 2 + infoU + m.items.length * ROW_U + seps * SEP_U + heads * HEAD_U;
   const headU = m.logo ? CHAR_H * 3 : CHAR_H + 3;
   const totalU = headU + 10 + cardU + (m.desc !== undefined ? 8 + CHAR_H : 0);
   const fs = Math.max(1, Math.min(
@@ -414,10 +421,15 @@ export function drawMenu(s: Surface, m: MenuView): void {
   const tx = x0 + (PAD_U + 4) * fs;
   const vx = x0 + cardW - (PAD_U + 4) * fs;
   const textY = ((ROW_U - CHAR_H) >> 1) * fs;
+  const gutter = m.items.some((it) => it.adjust) ? 2 * CHAR_W * fs : 0;
   m.items.forEach((it, i) => {
     if (it.sep && i > 0) {
       s.rect(x0 + PAD_U * fs, y + 3 * fs, cardW - PAD_U * 2 * fs, 1, C.faint);
       y += SEP_U * fs;
+    }
+    if (it.head) {
+      s.text(it.head, tx, y + fs, fs, C.head);
+      y += HEAD_U * fs;
     }
     const on = i === m.sel;
     if (on) {
@@ -426,8 +438,10 @@ export function drawMenu(s: Surface, m: MenuView): void {
     }
     s.text(it.label, tx, y + textY, fs, on ? C.text : C.dim);
     if (it.value) {
-      const value = on && it.adjust ? `< ${it.value} >` : it.adjust ? `${it.value}  ` : it.value;
-      s.text(value, vx, y + textY, fs, on ? C.accent : C.hint, 1);
+      // Every value ends at the same column; the arrows sit in a gutter beside it.
+      const arrows = on && it.adjust;
+      s.text(arrows ? `< ${it.value}` : it.value, vx - gutter, y + textY, fs, on ? C.accent : C.hint, 1);
+      if (arrows) s.text('>', vx, y + textY, fs, C.accent, 1);
     }
     y += ROW_U * fs;
   });

@@ -5,7 +5,7 @@ import type { Action, LockEvent } from '../src/game/engine.ts';
 import { Tutorial, LESSONS } from '../src/game/tutorial.ts';
 import { I, O, T, SHAPES } from '../src/game/pieces.ts';
 
-const handling = { das: 150, arr: 25, sdf: 0 };
+const handling = { das: 150, arr: 25, softRate: 0 };
 const tap = (g: Game, ...actions: Action[]) => {
   for (const a of actions) { g.press(a); g.release(a); }
 };
@@ -181,3 +181,35 @@ for (let i = 0; i < LESSONS.length; i++) {
     assert.equal(t.state, 'failed');
   });
 }
+
+test('a T-spin with no lines still scores, and the popup shows the points', () => {
+  // Slot with nothing to clear: rows are full of gaps on the far right.
+  const g = new Game({ mode: 'practice', handling, sequence: [T], board: [
+    'XXXX......',
+    'XXX...XX..',
+    'XXXX.XXX..',
+  ] });
+  g.press('cw'); g.release('cw');
+  for (let i = 0; i < 40; i++) { g.press('soft'); g.update(16); }
+  g.release('soft');
+  const before = g.score;
+  g.press('cw'); g.release('cw');
+  g.press('hard'); g.release('hard');
+  assert.equal(g.lines, 0);
+  assert.equal(g.score - before, 400);
+  assert.deepEqual(g.popup, ['T-SPIN', '+400']);
+});
+
+test('soft drop: a tap moves one row, a hold falls at the same rate on every level', () => {
+  const h = { das: 150, arr: 25, softRate: 20 };
+  const rows = (level: number) => {
+    const g = new Game({ mode: 'marathon', handling: h, startLevel: level });
+    const y = g.active!.y;
+    g.press('soft');
+    assert.equal(g.active!.y, y + 1, 'first row is immediate');
+    for (let i = 0; i < 25; i++) g.update(8); // 200 ms
+    return g.active!.y - y;
+  };
+  assert.equal(rows(1), 5);
+  assert.equal(rows(8), 5);
+});

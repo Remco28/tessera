@@ -66,7 +66,7 @@ export function defaults(): Config {
       retry: ['back'],
       undo: ['x'],
     },
-    handling: { das: 150, arr: 25, sdf: 30 },
+    handling: { das: 150, arr: 25, softRate: 20 },
     ghost: true,
     pauseOnBlur: true,
     alwaysOnTop: false,

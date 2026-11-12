@@ -64,7 +64,7 @@ let closed = false;
 let overAt = 0;
 
 const MODES: ModeId[] = ['marathon', 'sprint', 'ultra', 'cleanup', 'practice', 'tutorial'];
-const SDF_STEPS = [5, 10, 20, 30, 40, 60, 0];
+const SOFT_RATES = [10, 15, 20, 25, 30, 40, 60, 0];
 
 const NAV_KEYS: Record<string, Nav> = {
   up: 'up', down: 'down', left: 'left', right: 'right',
@@ -219,13 +219,13 @@ const MENU_DESC = [
 
 function menuView(): MenuView {
   const items: MenuItem[] = [
-    { label: 'MARATHON', value: `LEVEL ${cfg.startLevel}`, adjust: true },
+    { label: 'MARATHON', value: `LEVEL ${cfg.startLevel}`, adjust: true, head: 'GAME MODES' },
     { label: 'SPRINT', value: `${SPRINT_LINES} LINES` },
     { label: 'ULTRA', value: '2 MINUTES' },
     { label: 'CLEANUP', value: `HEIGHT ${cfg.cleanupHeight}`, adjust: true },
-    { label: 'PRACTICE', value: 'NO GRAVITY', sep: true },
+    { label: 'PRACTICE', value: 'NO GRAVITY' },
     { label: 'T-SPIN SCHOOL', value: `LESSON ${cfg.lesson + 1}/${LESSONS.length}`, adjust: true },
-    { label: 'CONTROLS', sep: true },
+    { label: 'CONTROLS', sep: true, head: 'OPTIONS' },
     { label: 'SETTINGS' },
     { label: 'QUIT' },
   ];
@@ -305,7 +305,7 @@ function settingsView(): MenuView {
     items: [
       { label: 'REPEAT DELAY (DAS)', value: `${h.das} MS`, adjust: true },
       { label: 'REPEAT RATE (ARR)', value: h.arr ? `${h.arr} MS` : 'INSTANT', adjust: true },
-      { label: 'SOFT DROP SPEED', value: h.sdf ? `X${h.sdf}` : 'INSTANT', adjust: true },
+      { label: 'SOFT DROP SPEED', value: h.softRate ? `${h.softRate} ROWS/S` : 'INSTANT', adjust: true },
       { label: 'GHOST PIECE', value: cfg.ghost ? 'ON' : 'OFF', adjust: true, sep: true },
       { label: 'PAUSE WHEN UNFOCUSED', value: cfg.pauseOnBlur ? 'ON' : 'OFF', adjust: true },
       { label: 'RESET SETTINGS', sep: true },
@@ -335,8 +335,8 @@ function settingsNav(n: Nav): void {
     if (ctrlSel === 0 && n !== 'ok') h.das = clamp(h.das + d * 10, 30, 400);
     else if (ctrlSel === 1 && n !== 'ok') h.arr = clamp(h.arr + d * 5, 0, 100);
     else if (ctrlSel === 2 && n !== 'ok') {
-      const i = Math.max(0, SDF_STEPS.indexOf(h.sdf));
-      h.sdf = SDF_STEPS[clamp(i + d, 0, SDF_STEPS.length - 1)];
+      const i = Math.max(0, SOFT_RATES.indexOf(h.softRate));
+      h.softRate = SOFT_RATES[clamp(i + d, 0, SOFT_RATES.length - 1)];
     } else if (ctrlSel === 3) cfg.ghost = !cfg.ghost;
     else if (ctrlSel === 4) cfg.pauseOnBlur = !cfg.pauseOnBlur;
     else if (n === 'ok' && ctrlSel === 5) {
