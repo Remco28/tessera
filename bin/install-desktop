@@ -1,0 +1,17 @@
+#!/bin/sh
+# Adds Tessera to the desktop's application menu for the current user.
+root=$(dirname "$(dirname "$(readlink -f "$0")")")
+dest="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
+mkdir -p "$dest"
+cat > "$dest/tessera.desktop" <<END
+[Desktop Entry]
+Type=Application
+Name=Tessera
+Comment=Falling-block puzzle game
+Exec=$root/bin/tessera
+Icon=$root/assets/icon.png
+Categories=Game;BlocksGame;
+StartupWMClass=tessera
+Terminal=false
+END
+echo "Installed $dest/tessera.desktop"

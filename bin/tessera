@@ -1,0 +1,6 @@
+#!/bin/sh
+# Launch Tessera. Node runs the TypeScript sources directly (Node 22.18+).
+dir=$(dirname "$(readlink -f "$0")")
+# Lets the desktop entry (and its icon) be matched to the window.
+export SDL_VIDEO_X11_WMCLASS=tessera
+exec node --disable-warning=ExperimentalWarning "$dir/../src/main.ts" "$@"

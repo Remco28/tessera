@@ -1,0 +1,21 @@
+{
+  "name": "tessera",
+  "version": "0.1.0",
+  "description": "A lightweight falling-block puzzle game with modern stacker rules and a T-spin school",
+  "type": "module",
+  "private": true,
+  "bin": { "tessera": "bin/tessera" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/main.ts",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.ts",
+    "check": "tsc --noEmit"
+  },
+  "engines": { "node": ">=22.18" },
+  "dependencies": {
+    "@kmamal/sdl": "^0.11.13"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}
